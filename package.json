@@ -2,8 +2,8 @@
   "name": "serverless-sqs-alarms-plugin",
   "description": "Serverless plugin to to configure CloudWatch alarms for SQS queues",
   "main": "src/plugin.js",
-  "version": "0.0.0",
-  "author": "Sebastian Müller <mail@sbstjn.com>",
+  "version": "0.0.1",
+  "author": "tcastelli",
   "license": "MIT",
   "scripts": {
     "test": "jest test",
@@ -13,21 +13,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sbstjn/serverless-sqs-alarms-plugin.git"
+    "url": "https://github.com/tcastelli/serverless-sqs-alarms-plugin.git"
   },
-  "bugs": {
-    "url": "https://github.com/sbstjn/serverless-sqs-alarms-plugin/issues"
-  },
-  "homepage": "https://github.com/sbstjn/serverless-sqs-alarms-plugin",
   "dependencies": {
-    "lodash": "^4.17.4"
+    "lodash": "^4.17.15"
   },
   "devDependencies": {
-    "coveralls": "^2.13.0",
-    "dot-json": "^1.0.3",
-    "jest": "^19.0.2",
-    "snazzy": "^6.0.0",
-    "standard": "^9.0.2"
+    "coveralls": "^3.0.9",
+    "dot-json": "^1.2.0",
+    "jest": "^25.1.0",
+    "snazzy": "^8.0.0",
+    "standard": "^14.3.1"
   },
   "standard": {
     "envs": [

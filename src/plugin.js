@@ -1,92 +1,56 @@
 'use strict'
 
 const _ = require('lodash')
-const util = require('util')
 
 class Alarm {
-  constructor (alarm, region) {
-    this.queue = alarm.queue
+  constructor (alarm, region, serviceName, stage) {
+    this.queueName = alarm.queueName
     this.topic = alarm.topic
     this.region = region
     this.thresholds = alarm.thresholds
     this.name = alarm.name
     this.treatMissingData = alarm.treatMissingData
+    this.serviceName = serviceName
+    this.stage = stage
   }
 
-  formatAlarmName (value) {
+  formatAlarmName (queueName, value) {
     // Cloud Watch alarms must be alphanumeric only
-    let queue = this.queue.replace(/[^0-9a-z]/gi, '')
-    return util.format(queue + 'MessageAlarm%s', value)
+    let finalQueueName = queueName.replace(/[^0-9a-z]/gi, '')
+    return `${finalQueueName}MessageAlarm${value}`;
   }
 
-  resolveTreatMissingData (index) {
-    if (this.treatMissingData.constructor === Array) {
-      return this.validateTreatMissingData(this.treatMissingData[index])
-    } else {
-      return this.validateTreatMissingData(this.treatMissingData)
-    }
-  }
-
-  validateTreatMissingData (treatment) {
-    let validTreamtments = ['missing', 'ignore', 'breaching', 'notBreaching']
-    if (validTreamtments.includes(treatment)) {
-      return treatment
-    }
-  }
-
-  resourceProperties (value) {
-    if (value instanceof Object) {
-      return value
-    }
-
-    return {
-      value
-    }
-  }
-
-  ressources () {
+  generateResource () {
     return this.thresholds.map(
-      (props, i) => {
-        const properties = this.resourceProperties(props)
-
+      (properties, i) => {
+        console.log(properties);
         const config = {
-          [this.formatAlarmName(properties.value)]: {
+          [this.formatAlarmName(this.queueName, properties.value)]: {
             Type: 'AWS::CloudWatch::Alarm',
             Properties: {
-              AlarmDescription: util.format('Alarm if queue contains more than %s messages', properties.value),
+              AlarmName: 
+              `${this.serviceName}-${this.stage}-${this.formatAlarmName(this.queueName.replace(`${this.serviceName}-${this.stage}`,"") ,properties.value)}`,
+              AlarmDescription: properties.description || `Custom alarm for ${this.queueName}`,
               Namespace: properties.namespace || 'AWS/SQS',
-              MetricName: 'ApproximateNumberOfMessagesVisible',
+              MetricName: this.metricName || 'NumberOfMessagesSent', // 'ApproximateNumberOfMessagesVisible'
               Dimensions: [
                 {
                   Name: 'QueueName',
-                  Value: this.queue
+                  Value: this.queueName
                 }
               ],
-              Statistic: 'Sum',
+              Statistic: properties.statistic || "Sum",
               Period: properties.period || 60,
               EvaluationPeriods: properties.evaluationPeriods || 1,
               Threshold: properties.value,
-              ComparisonOperator: 'GreaterThanOrEqualToThreshold',
-              AlarmActions: [
-                { 'Fn::Join': [ '', [ 'arn:aws:sns:' + this.region + ':', { 'Ref': 'AWS::AccountId' }, ':' + this.topic ] ] }
-              ],
-              OKActions: [
-                { 'Fn::Join': [ '', [ 'arn:aws:sns:' + this.region + ':', { 'Ref': 'AWS::AccountId' }, ':' + this.topic ] ] }
-              ]
+              ComparisonOperator: properties.operator || 'GreaterThanOrEqualToThreshold',
+              AlarmActions: properties.alarmActions || [],
+              OKActions: properties.okActions || [],
+              TreatMissingData: properties.treatMissingData || "missing"
             }
           }
         }
-
-        if (this.name) {
-          config[this.formatAlarmName(properties.value)].Properties.AlarmName = util.format('%s-%s-%d', this.name, this.queue, properties.value)
-        }
-
-        if (this.treatMissingData) {
-          let treatMissing = this.resolveTreatMissingData(i)
-          if (treatMissing) {
-            config[this.formatAlarmName(properties.value)].Properties.TreatMissingData = treatMissing
-          }
-        }
+        console.log(config);
         return config
       }
     )
@@ -107,19 +71,21 @@ class Plugin {
     }
 
     const alarms = this.serverless.service.custom['sqs-alarms'].map(
-      data => new Alarm(data, this.serverless.getProvider('aws').getRegion())
+      data => new Alarm(data, this.serverless.getProvider('aws').getRegion(), 
+      this.serverless.service.service, this.serverless.service.provider.stage)
     )
 
     alarms.forEach(
-      alarm => alarm.ressources().forEach(
-        ressource => {
+      alarm => alarm.generateResource().forEach(
+        resrc => {
           _.merge(
             this.serverless.service.provider.compiledCloudFormationTemplate.Resources,
-            ressource
+            resrc
           )
         }
       )
     )
+    throw new Error("just testing");
   }
 }
 
