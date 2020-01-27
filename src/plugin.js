@@ -24,7 +24,7 @@ class Alarm {
     return this.thresholds.map(
       (properties, i) => {
         const config = {
-          [properties.alarmName && properties.alarmName.replace(`${this.serviceName}-${this.stage}`, "") 
+          [properties.alarmName && properties.alarmName.replace(`${this.serviceName}-${this.stage}-`, "") 
           || this.formatAlarmName(this.queueName, properties.value)]: {
             Type: 'AWS::CloudWatch::Alarm',
             Properties: {
