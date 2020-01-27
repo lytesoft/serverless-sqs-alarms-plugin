@@ -85,7 +85,6 @@ class Plugin {
         }
       )
     )
-    throw new Error("just testing");
   }
 }
 
