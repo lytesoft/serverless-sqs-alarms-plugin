@@ -28,7 +28,7 @@ class Alarm {
           [this.formatAlarmName(this.queueName, properties.value)]: {
             Type: 'AWS::CloudWatch::Alarm',
             Properties: {
-              AlarmName: 
+              AlarmName: properties.alarmName ||
               `${this.serviceName}-${this.stage}-${this.formatAlarmName(this.queueName.replace(`${this.serviceName}-${this.stage}`,"") ,properties.value)}`,
               AlarmDescription: properties.description || `Custom alarm for ${this.queueName}`,
               Namespace: properties.namespace || 'AWS/SQS',
